@@ -14,3 +14,4 @@ First release: a shared lifecycle for my projects' justfiles.
   - `recipes/worktree.just`, imported by the others: `worktree <name>`, an unbound goal, creates a git worktree.
 - Skill `start-worktree`: names a worktree for a task and runs `just worktree`.
 - Reusable GitHub workflows for uv projects: `python-uv-ci.yml` runs `verify`, `python-uv-release.yml` runs `publish`.
+  Both install the apt packages in `system_packages` first.

@@ -52,12 +52,15 @@ To change a recipe file's variables, redefine them in the justfile, below `set a
 Skills live in `skills/<name>/SKILL.md`; link each into the coding agent's skills folder.
 
 In CI, call the reusable workflows at a bosun tag; they get the recipes at that tag. The release one needs
-`permissions: contents: write` and a `release_type` (`rc` or `stable`):
+`permissions: contents: write` and a `release_type` (`rc` or `stable`). Both take `system_packages`, apt packages
+installed first:
 
 ```yaml
 jobs:
   ci:
     uses: victorzinho/bosun/.github/workflows/python-uv-ci.yml@<tag>
+    with:
+      system_packages: libpq-dev gettext
 ```
 
 ## Releasing
