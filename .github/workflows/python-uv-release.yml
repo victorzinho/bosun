@@ -1,0 +1,40 @@
+name: Python uv release
+
+on:
+  workflow_call:
+    inputs:
+      release_type:
+        description: rc or stable
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TYPE: ${{ inputs.release_type }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - run: uv tool install rust-just
+      - run: uv tool install pip-audit
+
+      # the recipes at this workflow's commit; actions/checkout can't write outside the workspace
+      - name: Get bosun
+        run: |
+          git init --quiet ~/.config/bosun
+          git -C ~/.config/bosun fetch --quiet --depth 1 "https://github.com/${{ job.workflow_repository }}" "${{ job.workflow_sha }}"
+          git -C ~/.config/bosun checkout --quiet FETCH_HEAD
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - run: just publish "$RELEASE_TYPE"
