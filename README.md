@@ -11,7 +11,7 @@ Requires `just` 1.56 or newer.
 |-----------|--------------------------------------------------|-----------------|
 | `setup`   | create or sync the environment from the lockfile |                 |
 | `check`   | lint, type-check and audit dependencies          | `setup`         |
-| `test`    | run the tests; arguments go to the test runner   | `setup`         |
+| `test`    | run all the tests                                | `setup`         |
 | `verify`  | every gate CI runs                               | `check`, `test` |
 | `package` | build what gets released: wheel, image, site     | `verify`        |
 | `publish` | release it: `stable` or `rc`; CI only            | `package`       |
@@ -19,13 +19,28 @@ Requires `just` 1.56 or newer.
 A phase only orders earlier phases and goals. Goals do the work and have no dependencies. A goal is bound to zero or
 more phases.
 
+## Shared goals
+
+Every recipe file that implements the phases has these goals:
+
+| Goal              | Does                                                    | Phase  |
+|-------------------|---------------------------------------------------------|--------|
+| `pre-test`        | start what the tests need; idempotent                   | `test` |
+| `run-tests`       | run the tests; arguments go to the test runner          | `test` |
+| `post-test`       | stop what `pre-test` started; idempotent                | `test` |
+| `worktree <name>` | a git worktree on a new branch `<name>`, at `../<name>` |        |
+
+For developing: run `pre-test` once, then `run-tests` with arguments.
+
 ## Compatibility
 
-`bosun` guarantees the phases. Each recipe file guarantees its goals, which phase runs them, and its variables.
+`bosun` guarantees the phases and the shared goals.
+
+Each recipe file guarantees its goals, which phase runs them, and its variables.
 
 Changing any of these is a breaking change.
 
-Goals with the same name in two files are a convenience, not a promise.
+Other goals with the same name in two files are a convenience, not a promise.
 
 ## Recipes
 

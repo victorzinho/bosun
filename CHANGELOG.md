@@ -6,6 +6,7 @@ First release: a shared lifecycle for my projects' justfiles.
 
 - Phases `setup`, `check`, `test`, `verify`, `package` and `publish`. Each runs goals, which projects redefine to change
   what the phase does.
+- Shared goals `pre-test`, `run-tests`, `post-test` and `worktree`, in every recipe file that implements the phases.
 - Available recipes (each documented in their files)
   - `recipes/python-uv.just`: for uv projects (ruff, basedpyright, pytest, coverage, import-linter, pip audit).
     Includes publishing (stable and release candidates) with GitHub releases and git tags.

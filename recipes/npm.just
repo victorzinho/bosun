@@ -1,19 +1,21 @@
 # The phases (README.md) for npm projects, without `publish`.
 #
-# Tooling: npm. Each goal runs the package.json script with its name, if there is one; without it, the goal does
-# nothing.
+# Tooling: npm. Each goal runs npm's usual script for it, else the package.json script with its name; without the
+# script, the goal does nothing.
 #
 # Phases and the goals they run, in order:
 #
 #   setup    install
 #   check    setup, process-resources, lint, typecheck
-#   test     setup, process-resources, pre-test, build, test-build, post-test
+#   test     setup, process-resources, pre-test, run-tests, build, test-build, post-test
 #   verify   check, test
 #   package  verify, build
 #
 # Goals:
 #
 # - `install`: npm ci; not a script.
+# - `pre-test`, `post-test`: the `pretest` and `posttest` scripts.
+# - `run-tests`: the `test` script, without its `pretest` and `posttest` hooks; arguments go to it.
 # - `test-build`: checks the build; arguments go to its script.
 # - `worktree`: bound to no phase; recipes/worktree.just.
 
@@ -32,11 +34,9 @@ setup: install
 [group('phases')]
 check: setup process-resources lint typecheck
 
-# setup, process-resources, pre-test, build, test-build, post-test; arguments go to test-build
+# setup, process-resources, pre-test, run-tests, build, test-build, post-test
 [group('phases')]
-[positional-arguments]
-test *args: setup process-resources pre-test build && post-test
-    @{{ just_executable() }} --justfile {{ quote(justfile()) }} test-build "$@"
+test: setup process-resources pre-test run-tests build test-build && post-test
 
 # check, test
 [group('phases')]
@@ -66,23 +66,29 @@ lint:
 typecheck:
     npm run --if-present typecheck
 
-# Start what the tests need.
+# Start what the tests need; idempotent.
 [group('goals')]
 pre-test:
-    npm run --if-present pre-test
+    npm run --if-present pretest
+
+# npm test, without its pretest and posttest hooks; arguments go to it.
+[group('goals')]
+[positional-arguments]
+run-tests *args:
+    npm run --if-present --ignore-scripts test -- "$@"
 
 # Build what gets released.
 [group('goals')]
 build:
     npm run --if-present build
 
-# Check the build.
+# Check the build; arguments go to its script.
 [group('goals')]
 [positional-arguments]
 test-build *args:
     npm run --if-present test-build -- "$@"
 
-# Stop what pre-test started; ideally idempotent.
+# Stop what pre-test started; idempotent.
 [group('goals')]
 post-test:
-    npm run --if-present post-test
+    npm run --if-present posttest

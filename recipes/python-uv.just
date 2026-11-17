@@ -58,11 +58,9 @@ setup: install
 [group('phases')]
 check: setup process-resources lint typecheck lint-imports audit
 
-# setup, process-resources, pre-test, run-tests, post-test; arguments go to run-tests
+# setup, process-resources, pre-test, run-tests, post-test
 [group('phases')]
-[positional-arguments]
-test *args: setup process-resources pre-test && post-test
-    @{{ just_executable() }} --justfile {{ quote(justfile()) }} run-tests "$@"
+test: setup process-resources pre-test run-tests && post-test
 
 # check, test
 [group('phases')]
@@ -118,11 +116,11 @@ audit:
         echo "audit: pip-audit not found, skipping the dependency audit" >&2
     fi
 
-# Start what the tests need.
+# Start what the tests need; idempotent.
 [group('goals')]
 pre-test:
 
-# pytest; without arguments, with --cov if pyproject.toml configures coverage.
+# pytest with the arguments; without them, with --cov if pyproject.toml configures coverage.
 [group('goals')]
 [positional-arguments]
 run-tests *args:
@@ -132,7 +130,7 @@ run-tests *args:
     if [[ $# -eq 0 ]] && {{ _bosun }}has_tool coverage; then coverage=(--cov); fi
     uv run --locked --group {{ uv_group }} pytest "${coverage[@]}" "$@"
 
-# Stop what pre-test started; ideally idempotent.
+# Stop what pre-test started; idempotent.
 [group('goals')]
 post-test:
 
