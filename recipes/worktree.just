@@ -6,7 +6,7 @@
 #
 # - `worktree <name>`: a git worktree beside the repository, at ../<name>, on a new branch <name> from the default
 #   branch (origin/HEAD, else main, else master). Fails if ../<name> exists. Copies `worktree_files` the worktree
-#   lacks, then runs `verify` in it.
+#   lacks, then runs `test` in it.
 #
 # Variables, to redefine in the project's justfile:
 #
@@ -16,7 +16,7 @@
 # Gitignored files and directories copied into a new worktree, space-separated.
 worktree_files := "AGENTS.md .claude .agents"
 
-# A worktree at ../<name> on a new branch from the default branch, then verify it.
+# A worktree at ../<name> on a new branch from the default branch, then test it.
 [group('goals')]
 worktree name:
     #!/usr/bin/env bash
@@ -41,4 +41,4 @@ worktree name:
         if [[ -e "$top/$file" && ! -e "$target/$file" ]]; then cp -a "$top/$file" "$target/$file"; fi
     done
     cd "$target/$(realpath --relative-to "$top" {{ quote(justfile_directory()) }})"
-    {{ just_executable() }} verify
+    {{ just_executable() }} test

@@ -6,19 +6,20 @@
 #
 #   setup    install
 #   check    setup, process-resources, lint, typecheck, lint-imports, audit
-#   test     setup, process-resources, pre-test, run-tests, post-test
-#   verify   check, test
-#   package  verify, build
-#   publish  verify, the release version, package, the next version, push, release
+#   test     setup, process-resources, pre-test, run-tests
+#   package  setup, process-resources, build
+#   verify   check, test, package
+#   publish  the release version, verify, its commit and tag, the next version, push, release
 #
 # Goals:
 #
-# - `process-resources`, `pre-test`, `post-test`: empty.
+# - `process-resources`, `pre-test`: empty.
 # - `lint-imports`: only if pyproject.toml configures importlinter.
 # - `audit`: pip-audit, if installed.
 # - `run-tests`: arguments go to pytest; without them, with --cov if pyproject.toml configures coverage.
 # - `build`: the wheel and sdist.
 # - `release`: the GitHub release of the latest tag, with dist/* and its CHANGELOG.md section.
+# - `clean`: removes dist/; bound to no phase.
 # - `worktree`: bound to no phase; recipes/worktree.just.
 #
 # Variables, to redefine in the project's justfile:
@@ -33,7 +34,7 @@
 #
 # - `publish stable` releases X.Y.Z with the Unreleased section as its own, then sets X.Y+1.0.dev0.
 # - `publish rc` releases the next release candidate with the Unreleased section as notes, then sets the one after it.
-# - Both tag vX.Y.Z[rcN] and push before `release`.
+# - Both verify the release version and tag it vX.Y.Z[rcN], then push before `release`.
 
 import 'worktree.just'
 
@@ -58,22 +59,22 @@ setup: install
 [group('phases')]
 check: setup process-resources lint typecheck lint-imports audit
 
-# setup, process-resources, pre-test, run-tests, post-test
+# setup, process-resources, pre-test, run-tests
 [group('phases')]
-test: setup process-resources pre-test run-tests && post-test
+test: setup process-resources pre-test run-tests
 
-# check, test
+# setup, process-resources, build
 [group('phases')]
-verify: check test
+package: setup process-resources build
 
-# verify, build
+# check, test, package
 [group('phases')]
-package: verify build
+verify: check test package
 
-# verify, release version, package, next version, push, release; CI only
+# release version, verify, its commit and tag, next version, push, release; CI only
 [arg('type', pattern='rc|stable')]
 [group('phases')]
-publish type: verify (_release-version type) package (_next-version type) _push release
+publish type: (_release-version type) verify _tag-release (_next-version type) _push release
 
 # uv sync, with the dev group.
 [group('goals')]
@@ -130,14 +131,15 @@ run-tests *args:
     if [[ $# -eq 0 ]] && {{ _bosun }}has_tool coverage; then coverage=(--cov); fi
     uv run --locked --group {{ uv_group }} pytest "${coverage[@]}" "$@"
 
-# Stop what pre-test started; idempotent.
-[group('goals')]
-post-test:
-
 # uv build: the wheel and sdist.
 [group('goals')]
 build:
     uv build
+
+# Remove dist/.
+[group('goals')]
+clean:
+    rm -rf dist
 
 # The GitHub release of the latest tag, with dist/* and its CHANGELOG.md section.
 [group('goals')]
@@ -150,7 +152,7 @@ release:
     shopt -s nullglob
     gh release create "$tag" dist/* --verify-tag --notes "$({{ _bosun }}changelog notes "${tag#v}")" "${prerelease[@]}"
 
-# Set the version to release, then commit and tag it.
+# Set the version to release.
 _release-version type:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -161,6 +163,11 @@ _release-version type:
         # from rcN, _next-version already set rcN+1
         uv version --bump rc --no-sync
     fi
+
+# Commit and tag the version to release.
+_tag-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
     version=$(uv version --short --frozen)
     git diff --quiet || git commit -am "Release $version"
     git tag -m "Release $version" "v$version"

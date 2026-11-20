@@ -38,7 +38,7 @@ Run `just worktree <name>` from `<repo>`.
 It fails before creating anything if `<repo>/../<name>` exists or the repository has no default branch: surface the
 error and stop. Never reuse or remove an existing worktree.
 
-Once the worktree is created it runs `just verify` there; a failed verify leaves the worktree in place.
+Once the worktree is created it runs `just test` there; a failed test leaves the worktree in place.
 
 ## Step 5 — Report
 

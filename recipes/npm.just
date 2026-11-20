@@ -7,16 +7,17 @@
 #
 #   setup    install
 #   check    setup, process-resources, lint, typecheck
-#   test     setup, process-resources, pre-test, run-tests, build, test-build, post-test
-#   verify   check, test
-#   package  verify, build
+#   test     setup, process-resources, pre-test, run-tests
+#   package  setup, process-resources, build
+#   verify   check, test, package, test-build
 #
 # Goals:
 #
 # - `install`: npm ci; not a script.
-# - `pre-test`, `post-test`: the `pretest` and `posttest` scripts.
+# - `pre-test`: the `pretest` script.
 # - `run-tests`: the `test` script, without its `pretest` and `posttest` hooks; arguments go to it.
 # - `test-build`: checks the build; arguments go to its script.
+# - `clean`: the `clean` script; bound to no phase.
 # - `worktree`: bound to no phase; recipes/worktree.just.
 
 import 'worktree.just'
@@ -34,17 +35,17 @@ setup: install
 [group('phases')]
 check: setup process-resources lint typecheck
 
-# setup, process-resources, pre-test, run-tests, build, test-build, post-test
+# setup, process-resources, pre-test, run-tests
 [group('phases')]
-test: setup process-resources pre-test run-tests build test-build && post-test
+test: setup process-resources pre-test run-tests
 
-# check, test
+# setup, process-resources, build
 [group('phases')]
-verify: check test
+package: setup process-resources build
 
-# verify, build
+# check, test, package, test-build
 [group('phases')]
-package: verify build
+verify: check test package test-build
 
 # npm ci.
 [group('goals')]
@@ -88,7 +89,7 @@ build:
 test-build *args:
     npm run --if-present test-build -- "$@"
 
-# Stop what pre-test started; idempotent.
+# Remove what the other goals created; idempotent.
 [group('goals')]
-post-test:
-    npm run --if-present posttest
+clean:
+    npm run --if-present clean
