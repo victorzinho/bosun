@@ -1,6 +1,6 @@
 [project]
 name = "bosun"
-version = "0.1.0rc3"
+version = "0.1.0rc4"
 description = "Shared lifecycle recipes for my projects"
 requires-python = ">=3.12"
 # The recipes run src/bosun with the system python3: standard library only.
